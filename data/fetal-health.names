@@ -1,0 +1,32 @@
+Citation Request:
+
+   2126 measurements extracted from cardiotocograms and classified by expert obstetricians, as described in:
+   [Ayres de Campos et al. (2000) SisPorto 2.0 A Program for Automated Analysis of Cardiotocograms. J Matern Fetal Med 5:311-318]
+
+   Attribute information:
+
+   For more information, read [Campos et al., 2000].
+
+   Input variables (based on medical tests):
+    1. baseline value
+    2. accelerations
+    3. fetal_movement
+    4. uterine_contractions
+    5. light_decelerations
+    6. severe_decelerations
+    7. prolongued_decelerations
+    8. abnormal_short_term_variability
+    9. mean_value_of_short_term_variability
+    10. percentage_of_time_with_abnormal_long_term_variability
+    11. mean_value_of_long_term_variability
+    12. histogram_width
+    13. histogram_min
+    14. histogram_max
+    15. histogram_number_of_peaks
+    16. histogram_number_of_zeroes
+    17. histogram_mode
+    18. histogram_mean
+    19. histogram_median
+    20. histogram_variance
+    21. histogram_tendency
+    22. fetal_health
