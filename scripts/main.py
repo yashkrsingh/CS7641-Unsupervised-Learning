@@ -194,8 +194,8 @@ def part5():
 
 
 if __name__ == '__main__':
-    # part1()
-    # part2()
-    # part3()
-    # part4()
+    part1()
+    part2()
+    part3()
+    part4()
     part5()
