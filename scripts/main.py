@@ -123,6 +123,34 @@ def part3():
         plot_cluster_stats_batch(f'{dataset_name}', 'kmeans', stats['kmeans'])
         plot_cluster_stats_batch(f'{dataset_name}', 'em', stats['em'])
 
+    pca = PCA(n_components=6, random_state=seed)
+    X_pca_array = pca.fit_transform(datasets['wine'][0])
+    X_pca = pd.DataFrame(X_pca_array, columns=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6'])
+
+    kmeans = KMeans(n_clusters=2, random_state=seed)
+    kmeans.fit(X_pca)
+    y_cluster_kmeans = kmeans.predict(X_pca)
+
+    df_plotKM = X_pca.copy()
+    df_plotKM['kmeans'] = y_cluster_kmeans
+
+    plot_color_map(df_plotKM, 'kmeans_colorplot_wine', 'kmeans', 'PC1', 'PC2',
+                   'KMeans on PCA Dimensionality Reduction on Wine')
+
+    ica = FastICA(n_components=6, random_state=seed)
+    X_ica_array = ica.fit_transform(datasets['wine'][0])
+    X_ica = pd.DataFrame(X_ica_array, columns=['IC1', 'IC2', 'IC3', 'IC4', 'IC5', 'IC6'])
+
+    kmeans = KMeans(n_clusters=2, random_state=seed)
+    kmeans.fit(X_ica)
+    y_cluster_kmeans = kmeans.predict(X_ica)
+
+    df_plotKM = X_ica.copy()
+    df_plotKM['kmeans'] = y_cluster_kmeans
+
+    plot_color_map(df_plotKM, 'kmeans_colorplot_wine', 'kmeans', 'IC1', 'IC2',
+                   'KMeans on ICA Dimensionality Reduction on Wine')
+
 
 def part4():
     seed = 42
@@ -153,7 +181,7 @@ def part4():
         plot_learning_curve(f'wine_{method_name}', nn, new_train_x, wine_train_y, 'f1')
         results.loc[results.shape[0]] = classification_scores('wine', method_name, wine_train_result)
 
-    results.to_csv('nn_fs.csv', sep=',', encoding='utf-8')
+    results.to_csv('stats/exp4/nn_featureselection.csv', sep=',', encoding='utf-8')
 
 
 def part5():
@@ -169,8 +197,6 @@ def part5():
     for predictor_name, pr_method in {
         'kmeans': KMeans(n_clusters=k, random_state=seed),
         'em': GaussianMixture(n_components=k, random_state=seed)}.items():
-
-        # pr_method.fit(wine_train_x)
         train_clusters = pr_method.fit_predict(wine_train_x, wine_train_y)
         train_x_clusters = wine_train_x.copy()
         train_x_clusters = np.column_stack((train_x_clusters, train_clusters))
@@ -190,7 +216,7 @@ def part5():
         plot_learning_curve(f'wine_{predictor_name}', nn, train_x_clusters, wine_train_y, 'f1')
         results.loc[results.shape[0]] = classification_scores('wine', predictor_name, wine_train_result)
 
-    results.to_csv('nn_clustering.csv', sep=',', encoding='utf-8')
+    results.to_csv('stats/exp5/nn_clustering.csv', sep=',', encoding='utf-8')
 
 
 if __name__ == '__main__':

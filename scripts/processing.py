@@ -83,9 +83,9 @@ def perform_kmeans(dataset_name, method_name, x, y_label, seed, plot=False):
     plot_cluster_stats(dataset_name, 'kmeans', dict_stats)
 
     if method_name is not None:
-        kmeans_stats.to_csv(f'{dataset_name}_{method_name}_kmeans_results.csv', sep=',', encoding='utf-8')
+        kmeans_stats.to_csv(f'stats/exp3/{dataset_name}_{method_name}_kmeans_results.csv', sep=',', encoding='utf-8')
     else:
-        kmeans_stats.to_csv(f'{dataset_name}_kmeans_results.csv', sep=',', encoding='utf-8')
+        kmeans_stats.to_csv(f'stats/exp1/{dataset_name}_kmeans_results.csv', sep=',', encoding='utf-8')
     return dict_stats
 
 
@@ -107,9 +107,9 @@ def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
     plot_cluster_stats(dataset_name, 'em', dict_stats)
 
     if method_name is not None:
-        em_stats.to_csv(f'{dataset_name}_{method_name}_em_results.csv', sep=',', encoding='utf-8')
+        em_stats.to_csv(f'stats/exp3/{dataset_name}_{method_name}_em_results.csv', sep=',', encoding='utf-8')
     else:
-        em_stats.to_csv(f'{dataset_name}_em_results.csv', sep=',', encoding='utf-8')
+        em_stats.to_csv(f'stats/exp1/{dataset_name}_em_results.csv', sep=',', encoding='utf-8')
     return dict_stats
 
 
@@ -292,3 +292,25 @@ def classification_scores(data, method, classification_report):
     accuracy = classification_report['accuracy']
 
     return [data, method, precision, recall, f1, accuracy]
+
+
+def plot_color_map(df, data_name, groupby, x, y, title):
+    n_clust = 2
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    cmap = plt.cm.get_cmap('viridis', 3)
+
+    for i, cluster in df.groupby(groupby):
+        cluster.plot(ax=ax, kind='scatter', x=x, y=y,
+                     color=cmap(i / (n_clust - 1)),
+                     label="%s %i" % (groupby, i),
+                     alpha=0.3,
+                     s=20)  # dot size
+    ax.grid()
+    ax.axhline(0, color='black')
+    ax.axvline(0, color='black')
+    ax.set_title(title)
+
+    path = f'plots/scatter/{data_name}.png'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    plt.savefig(path, dpi=200, bbox_inches='tight')
