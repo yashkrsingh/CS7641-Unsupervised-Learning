@@ -7,7 +7,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import davies_bouldin_score, v_measure_score, silhouette_score
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import learning_curve
+from sklearn.model_selection import learning_curve, train_test_split
+from sklearn.model_selection import validation_curve
 from sklearn import preprocessing
 
 
@@ -31,6 +32,16 @@ def load_fetus_data():
     fetus["fetal_health"] = label_encoder.fit_transform(fetus["fetal_health"])
     # print(fetus['fetal_health'].value_counts())
     return fetus
+
+
+def split_data_set(dataframe, seed):
+    training_set, test_set = train_test_split(dataframe, train_size=0.8, shuffle=True, random_state=seed)
+    train_x, train_y = training_set.iloc[:, :-1], training_set.iloc[:, -1]
+    test_x, test_y = test_set.iloc[:, :-1], test_set.iloc[:, -1]
+    scaler = StandardScaler()
+    train_x = scaler.fit_transform(train_x)
+    test_x = scaler.transform(test_x)
+    return train_x, train_y, test_x, test_y
 
 
 def preprocess_data():
@@ -100,60 +111,6 @@ def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
     else:
         em_stats.to_csv(f'{dataset_name}_em_results.csv', sep=',', encoding='utf-8')
     return dict_stats
-
-
-def plot_learning_curve(data_name, estimator, train_x, train_y, score_metric):
-    plt.clf()
-    train_sizes, train_scores, test_scores, fit_times, score_times = learning_curve(estimator, train_x, train_y, cv=5,
-                                                                                    n_jobs=-1, return_times=True,
-                                                                                    scoring=score_metric,
-                                                                                    train_sizes=np.linspace(0.1, 1.0,
-                                                                                                            5))
-
-    train_scores_mean = np.mean(train_scores, axis=1)
-    train_scores_std = np.std(train_scores, axis=1)
-    test_scores_mean = np.mean(test_scores, axis=1)
-    test_scores_std = np.std(test_scores, axis=1)
-    fit_times_mean = np.mean(fit_times, axis=1)
-    fit_times_std = np.std(fit_times, axis=1)
-    score_times_mean = np.mean(score_times, axis=1)
-    score_times_std = np.std(score_times, axis=1)
-
-    _, axes = plt.subplots(1, 2, figsize=(20, 5))
-    axes[0].set_xlabel("Training examples")
-    axes[0].set_ylabel("F1 Score")
-    axes[0].grid()
-    axes[0].fill_between(train_sizes, train_scores_mean - train_scores_std, train_scores_mean + train_scores_std,
-                         alpha=0.1, color="r")
-    axes[0].fill_between(train_sizes, test_scores_mean - test_scores_std, test_scores_mean + test_scores_std, alpha=0.1,
-                         color="g")
-    axes[0].plot(train_sizes, train_scores_mean, 'o-', color="r", label="Training score")
-    axes[0].plot(train_sizes, test_scores_mean, 'o-', color="g", label="Cross-validation score")
-    axes[0].legend(loc="best")
-    axes[0].set_title("Learning curve")
-
-    axes[1].grid()
-    axes[1].plot(train_sizes, fit_times_mean, 'o-', label="Fit time")
-    axes[1].plot(train_sizes, score_times_mean, 'o-', label="Score time")
-    axes[1].fill_between(train_sizes, fit_times_mean - fit_times_std, fit_times_mean + fit_times_std, alpha=0.1)
-    axes[1].fill_between(train_sizes, score_times_mean - score_times_std, score_times_mean + score_times_std, alpha=0.1)
-
-    axes[1].set_xlabel("Training examples")
-    axes[1].set_ylabel("Time (sec)")
-    axes[1].legend(loc="best")
-    axes[1].set_title("Scalability of the model")
-
-    name = 'learning curve'
-    plt.savefig(f'{data_name}_{estimator.__class__.__name__}_{name}.png', dpi=200, bbox_inches='tight')
-
-
-def classification_scores(data, classification_report):
-    precision = classification_report['macro avg']['precision']
-    recall = classification_report['macro avg']['recall']
-    f1 = classification_report['macro avg']['f1-score']
-    accuracy = classification_report['accuracy']
-
-    return [data, precision, recall, f1, accuracy]
 
 
 def plot_cluster(name, c_name, x, y, k, y_label, weights=None):
@@ -280,3 +237,57 @@ def plot_reconstruction(dataset, dict_reconstruct, rp_reconstruct):
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
     plt.close('all')
+
+
+def plot_learning_curve(data_name, estimator, train_x, train_y, score_metric):
+    plt.clf()
+    train_sizes, train_scores, test_scores, fit_times, score_times = learning_curve(estimator, train_x, train_y, cv=5,
+                                                                                    n_jobs=-1, return_times=True,
+                                                                                    scoring=score_metric,
+                                                                                    train_sizes=np.linspace(0.1, 1.0,
+                                                                                                            5))
+
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    fit_times_mean = np.mean(fit_times, axis=1)
+    fit_times_std = np.std(fit_times, axis=1)
+    score_times_mean = np.mean(score_times, axis=1)
+    score_times_std = np.std(score_times, axis=1)
+
+    _, axes = plt.subplots(1, 2, figsize=(20, 5))
+    axes[0].set_xlabel("Training examples")
+    axes[0].set_ylabel("F1 Score")
+    axes[0].grid()
+    axes[0].fill_between(train_sizes, train_scores_mean - train_scores_std, train_scores_mean + train_scores_std,
+                         alpha=0.1, color="r")
+    axes[0].fill_between(train_sizes, test_scores_mean - test_scores_std, test_scores_mean + test_scores_std, alpha=0.1,
+                         color="g")
+    axes[0].plot(train_sizes, train_scores_mean, 'o-', color="r", label="Training score")
+    axes[0].plot(train_sizes, test_scores_mean, 'o-', color="g", label="Cross-validation score")
+    axes[0].legend(loc="best")
+    axes[0].set_title("Learning curve")
+
+    axes[1].grid()
+    axes[1].plot(train_sizes, fit_times_mean, 'o-', label="Fit time")
+    axes[1].plot(train_sizes, score_times_mean, 'o-', label="Score time")
+    axes[1].fill_between(train_sizes, fit_times_mean - fit_times_std, fit_times_mean + fit_times_std, alpha=0.1)
+    axes[1].fill_between(train_sizes, score_times_mean - score_times_std, score_times_mean + score_times_std, alpha=0.1)
+
+    axes[1].set_xlabel("Training examples")
+    axes[1].set_ylabel("Time (sec)")
+    axes[1].legend(loc="best")
+    axes[1].set_title("Scalability of the model")
+
+    name = 'learning curve'
+    plt.savefig(f'{data_name}_{estimator.__class__.__name__}_{name}.png', dpi=200, bbox_inches='tight')
+
+
+def classification_scores(data, method, classification_report):
+    precision = classification_report['macro avg']['precision']
+    recall = classification_report['macro avg']['recall']
+    f1 = classification_report['macro avg']['f1-score']
+    accuracy = classification_report['accuracy']
+
+    return [data, method, precision, recall, f1, accuracy]

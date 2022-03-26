@@ -2,6 +2,8 @@ from scipy.linalg import pinv
 from scipy.stats import kurtosis
 from sklearn.decomposition import PCA, FastICA
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
+from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.neural_network import MLPClassifier
 from sklearn.random_projection import GaussianRandomProjection
 
 from processing import *
@@ -121,7 +123,39 @@ def part3():
         plot_cluster_stats_batch(f'{dataset_name}', 'em', stats['em'])
 
 
+def part4():
+    seed = 42
+    k = 6
+    np.random.seed(seed)
+
+    wine = load_wine_data()
+    wine_train_x, wine_train_y, wine_test_x, wine_test_y = split_data_set(wine, seed)
+
+    results = pd.DataFrame(columns=['data', 'method', 'precision', 'recall', 'f1', 'accuracy'])
+
+    for method_name, fs_method in {
+        'PCA': PCA(k),
+        'ICA': FastICA(k),
+        'RP': GaussianRandomProjection(k),
+        'MI': SelectKBest(mutual_info_classif, k=k)}.items():
+        new_train_x = fs_method.fit_transform(wine_train_x, wine_train_y)
+        new_test_x = fs_method.fit_transform(wine_test_x, wine_test_y)
+
+        nn = MLPClassifier(activation='relu', hidden_layer_sizes=[200], learning_rate_init=.001, learning_rate='adaptive',
+                           max_iter=10000)
+        nn.fit(new_train_x, wine_train_y)
+        prediction = nn.predict(new_test_x)
+        print(confusion_matrix(wine_test_y, prediction))
+        wine_train_result = classification_report(wine_test_y, prediction, output_dict=True)
+
+        plot_learning_curve(f'wine_{method_name}', nn, new_train_x, wine_train_y, 'f1')
+        results.loc[results.shape[0]] = classification_scores('wine', method_name, wine_train_result)
+
+    results.to_csv('nn_fs.csv', sep=',', encoding='utf-8')
+
+
 if __name__ == '__main__':
     part1()
     part2()
     part3()
+    part4()
