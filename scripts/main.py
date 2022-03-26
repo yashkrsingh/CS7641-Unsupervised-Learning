@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.linalg import pinv
 from scipy.stats import kurtosis
 from sklearn.decomposition import PCA, FastICA
@@ -49,7 +50,7 @@ def part2():
         avg_kurtosis = []
 
         for k in range(1, x.shape[1] + 1):
-            pca = PCA(n_components=k)
+            pca = PCA(n_components=k, random_state=seed)
             new_x = pca.fit_transform(x)
             projection = pca.inverse_transform(new_x)
             reconstruct_err = np.mean(np.square(x - projection))
@@ -60,7 +61,7 @@ def part2():
 
         avg_kurtosis = []
         for k in range(1, x.shape[1] + 1):
-            ica = FastICA(n_components=k)
+            ica = FastICA(n_components=k, random_state=seed)
             new_x = ica.fit_transform(x)
             projection = ica.inverse_transform(new_x)
             reconstruct_err = np.mean(np.square(x - projection))
@@ -73,7 +74,7 @@ def part2():
         for i in range(1, 5):
             curr_rp_rec = []
             for k in range(1, x.shape[1] + 1):
-                rp = GaussianRandomProjection(n_components=k)
+                rp = GaussianRandomProjection(n_components=k, random_state=seed)
                 new_x = rp.fit_transform(x)
                 projection = (pinv(rp.components_) @ new_x.T).T
                 reconstruct_err = np.mean(np.square(x - projection))
@@ -84,7 +85,7 @@ def part2():
 
         mi = SelectKBest(mutual_info_classif, k=x.shape[1])
         new_x = mi.fit_transform(x, y_label)
-        plot_transformations(dataset_name, 'mi', 'Mututal Information', 'Features (asc)', 'Mutual Information',
+        plot_transformations(dataset_name, 'mi', 'Mutual Information', 'Features (asc)', 'Mutual Information',
                              sorted(mi.scores_))
         for k in range(1, x.shape[1] + 1):
             mi = SelectKBest(mutual_info_classif, k=k)
@@ -109,9 +110,9 @@ def part3():
 
         stats = {'kmeans': {}, 'em': {}}
         for method_name, fs_method in {
-            'PCA': PCA(k),
-            'ICA': FastICA(k),
-            'RP': GaussianRandomProjection(k),
+            'PCA': PCA(k, random_state=seed),
+            'ICA': FastICA(k, random_state=seed),
+            'RP': GaussianRandomProjection(k, random_state=seed),
             'MI': SelectKBest(mutual_info_classif, k=k)}.items():
             new_x = fs_method.fit_transform(x, y_label)
             k_stats = perform_kmeans(dataset_name, method_name, new_x, y_label, seed, plot=False)
@@ -134,14 +135,15 @@ def part4():
     results = pd.DataFrame(columns=['data', 'method', 'precision', 'recall', 'f1', 'accuracy'])
 
     for method_name, fs_method in {
-        'PCA': PCA(k),
-        'ICA': FastICA(k),
-        'RP': GaussianRandomProjection(k),
+        'PCA': PCA(k, random_state=seed),
+        'ICA': FastICA(k, random_state=seed),
+        'RP': GaussianRandomProjection(k, random_state=seed),
         'MI': SelectKBest(mutual_info_classif, k=k)}.items():
         new_train_x = fs_method.fit_transform(wine_train_x, wine_train_y)
         new_test_x = fs_method.fit_transform(wine_test_x, wine_test_y)
 
-        nn = MLPClassifier(activation='relu', hidden_layer_sizes=[200], learning_rate_init=.001, learning_rate='adaptive',
+        nn = MLPClassifier(activation='relu', hidden_layer_sizes=[200], learning_rate_init=.001,
+                           learning_rate='adaptive',
                            max_iter=10000)
         nn.fit(new_train_x, wine_train_y)
         prediction = nn.predict(new_test_x)
@@ -154,8 +156,46 @@ def part4():
     results.to_csv('nn_fs.csv', sep=',', encoding='utf-8')
 
 
+def part5():
+    seed = 42
+    k = 2
+    np.random.seed(seed)
+
+    wine = load_wine_data()
+    wine_train_x, wine_train_y, wine_test_x, wine_test_y = split_data_set(wine, seed)
+
+    results = pd.DataFrame(columns=['data', 'clustering', 'precision', 'recall', 'f1', 'accuracy'])
+
+    for predictor_name, pr_method in {
+        'kmeans': KMeans(n_clusters=k, random_state=seed),
+        'em': GaussianMixture(n_components=k, random_state=seed)}.items():
+
+        # pr_method.fit(wine_train_x)
+        train_clusters = pr_method.fit_predict(wine_train_x, wine_train_y)
+        train_x_clusters = wine_train_x.copy()
+        train_x_clusters = np.column_stack((train_x_clusters, train_clusters))
+
+        test_clusters = pr_method.predict(wine_test_x)
+        test_x_clusters = wine_test_x.copy()
+        test_x_clusters = np.column_stack((test_x_clusters, test_clusters))
+
+        nn = MLPClassifier(activation='relu', hidden_layer_sizes=[200], learning_rate_init=.001,
+                           learning_rate='adaptive',
+                           max_iter=10000)
+        nn.fit(train_x_clusters, wine_train_y)
+        prediction = nn.predict(test_x_clusters)
+        print(confusion_matrix(wine_test_y, prediction))
+        wine_train_result = classification_report(wine_test_y, prediction, output_dict=True)
+
+        plot_learning_curve(f'wine_{predictor_name}', nn, train_x_clusters, wine_train_y, 'f1')
+        results.loc[results.shape[0]] = classification_scores('wine', predictor_name, wine_train_result)
+
+    results.to_csv('nn_clustering.csv', sep=',', encoding='utf-8')
+
+
 if __name__ == '__main__':
-    part1()
-    part2()
-    part3()
-    part4()
+    # part1()
+    # part2()
+    # part3()
+    # part4()
+    part5()

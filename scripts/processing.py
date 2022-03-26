@@ -280,8 +280,9 @@ def plot_learning_curve(data_name, estimator, train_x, train_y, score_metric):
     axes[1].legend(loc="best")
     axes[1].set_title("Scalability of the model")
 
-    name = 'learning curve'
-    plt.savefig(f'{data_name}_{estimator.__class__.__name__}_{name}.png', dpi=200, bbox_inches='tight')
+    path = f'plots/learningcurves/{data_name}.png'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    plt.savefig(path, dpi=200, bbox_inches='tight')
 
 
 def classification_scores(data, method, classification_report):
