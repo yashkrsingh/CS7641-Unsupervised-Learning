@@ -189,6 +189,7 @@ def plot_cluster_stats_batch(dataset, method, stats):
             ax.set_ylabel(score_name)
             x = list(range(2, len(score_values) + 2))
             ax.plot(x, score_values, label=k, lw=2)
+            ax.grid()
             ax.set_xticks(x)
             ax.legend(loc='best')
 
