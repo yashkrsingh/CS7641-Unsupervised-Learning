@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 
 from sklearn.cluster import KMeans
-from sklearn.metrics import davies_bouldin_score, v_measure_score, silhouette_score
+from sklearn.metrics import davies_bouldin_score, v_measure_score, silhouette_score, classification_report
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import learning_curve, train_test_split
@@ -67,6 +67,7 @@ def preprocess_data():
 def perform_kmeans(dataset_name, method_name, x, y_label, seed, plot=False):
     k_max = 10
     kmeans_stats = pd.DataFrame(columns=['Name', 'k', 'Log Likelihood', 'Silhouette score', 'DB score', 'V measure'])
+    results = pd.DataFrame(columns=['data', 'clustering', 'precision', 'recall', 'f1', 'accuracy'])
 
     for k in range(2, k_max):
         predictor = KMeans(n_clusters=k, random_state=seed)
@@ -77,21 +78,34 @@ def perform_kmeans(dataset_name, method_name, x, y_label, seed, plot=False):
         kmeans_stats.loc[kmeans_stats.shape[0]] = [dataset_name, k, predictor.score(x), silhouette_score(x, y),
                                                    davies_bouldin_score(x, y),
                                                    v_measure_score(y_label.to_numpy(dtype=int), y, beta=0)]
+        kmeans_res = classification_report(y_label, y, output_dict=True)
+        results.loc[results.shape[0]] = classification_scores(dataset_name, f'kmeans_{k}', kmeans_res)
+
     dict_stats = {'Log Likelihood': kmeans_stats['Log Likelihood'],
                   'Silhouette score': kmeans_stats['Silhouette score'], 'DB score': kmeans_stats['DB score'],
                   'V measure': kmeans_stats['V measure']}
     plot_cluster_stats(dataset_name, 'kmeans', dict_stats)
 
     if method_name is not None:
-        kmeans_stats.to_csv(f'stats/exp3/{dataset_name}_{method_name}_kmeans_results.csv', sep=',', encoding='utf-8')
+        path = f'stats/exp3/{dataset_name}_{method_name}_kmeans_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        kmeans_stats.to_csv(path, sep=',', encoding='utf-8')
     else:
-        kmeans_stats.to_csv(f'stats/exp1/{dataset_name}_kmeans_results.csv', sep=',', encoding='utf-8')
+        path = f'stats/exp1/{dataset_name}_kmeans_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        kmeans_stats.to_csv(path, sep=',', encoding='utf-8')
+
+        path = f'stats/exp1/{dataset_name}_kmeans_classification_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        results.to_csv(path, sep=',', encoding='utf-8')
+
     return dict_stats
 
 
 def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
     n_max = 10
     em_stats = pd.DataFrame(columns=['Name', 'k', 'Log Likelihood', 'Silhouette score', 'DB score', 'V measure'])
+    results = pd.DataFrame(columns=['data', 'clustering', 'precision', 'recall', 'f1', 'accuracy'])
 
     for n in range(2, n_max):
         predictor = GaussianMixture(n_components=n, random_state=seed)
@@ -102,14 +116,26 @@ def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
         em_stats.loc[em_stats.shape[0]] = [dataset_name, n, predictor.score(x), silhouette_score(x, y),
                                            davies_bouldin_score(x, y),
                                            v_measure_score(y_label.to_numpy(dtype=int), y, beta=0)]
+        em_res = classification_report(y_label, y, output_dict=True)
+        results.loc[results.shape[0]] = classification_scores(dataset_name, f'em_{n}', em_res)
+
     dict_stats = {'Log Likelihood': em_stats['Log Likelihood'], 'Silhouette score': em_stats['Silhouette score'],
                   'DB score': em_stats['DB score'], 'V measure': em_stats['V measure']}
     plot_cluster_stats(dataset_name, 'em', dict_stats)
 
     if method_name is not None:
-        em_stats.to_csv(f'stats/exp3/{dataset_name}_{method_name}_em_results.csv', sep=',', encoding='utf-8')
+        path = f'stats/exp3/{dataset_name}_{method_name}_em_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        em_stats.to_csv(path, sep=',', encoding='utf-8')
     else:
-        em_stats.to_csv(f'stats/exp1/{dataset_name}_em_results.csv', sep=',', encoding='utf-8')
+        path = f'stats/exp1/{dataset_name}_em_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        em_stats.to_csv(path, sep=',', encoding='utf-8')
+
+        path = f'stats/exp1/{dataset_name}_em_classification_results.csv'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        results.to_csv(path, sep=',', encoding='utf-8')
+
     return dict_stats
 
 

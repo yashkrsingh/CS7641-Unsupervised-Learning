@@ -134,7 +134,7 @@ def part3():
     df_plotKM = X_pca.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
 
-    plot_color_map(df_plotKM, 'kmeans_colorplot_wine', 'kmeans', 'PC1', 'PC2',
+    plot_color_map(df_plotKM, 'kmeans_colorplot_pca_wine', 'kmeans', 'PC1', 'PC2',
                    'KMeans on PCA Dimensionality Reduction on Wine')
 
     ica = FastICA(n_components=6, random_state=seed)
@@ -148,7 +148,7 @@ def part3():
     df_plotKM = X_ica.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
 
-    plot_color_map(df_plotKM, 'kmeans_colorplot_wine', 'kmeans', 'IC1', 'IC2',
+    plot_color_map(df_plotKM, 'kmeans_colorplot_ica_wine', 'kmeans', 'IC1', 'IC2',
                    'KMeans on ICA Dimensionality Reduction on Wine')
 
 
@@ -181,7 +181,9 @@ def part4():
         plot_learning_curve(f'wine_{method_name}', nn, new_train_x, wine_train_y, 'f1')
         results.loc[results.shape[0]] = classification_scores('wine', method_name, wine_train_result)
 
-    results.to_csv('stats/exp4/nn_featureselection.csv', sep=',', encoding='utf-8')
+    path = 'stats/exp4/nn_featureselection.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    results.to_csv(path, sep=',', encoding='utf-8')
 
 
 def part5():
@@ -216,7 +218,9 @@ def part5():
         plot_learning_curve(f'wine_{predictor_name}', nn, train_x_clusters, wine_train_y, 'f1')
         results.loc[results.shape[0]] = classification_scores('wine', predictor_name, wine_train_result)
 
-    results.to_csv('stats/exp5/nn_clustering.csv', sep=',', encoding='utf-8')
+    path = 'stats/exp5/nn_clustering.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    results.to_csv(path, sep=',', encoding='utf-8')
 
 
 if __name__ == '__main__':
