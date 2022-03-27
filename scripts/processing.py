@@ -72,14 +72,12 @@ def perform_kmeans(dataset_name, method_name, x, y_label, seed, plot=False):
     for k in range(2, k_max):
         predictor = KMeans(n_clusters=k, random_state=seed)
         y = predictor.fit_predict(x)
-        if plot and k <= 5:
-            plot_cluster(dataset_name, 'kmeans', x, y, k, y_label, weights=None)
 
         kmeans_stats.loc[kmeans_stats.shape[0]] = [dataset_name, k, predictor.score(x), silhouette_score(x, y),
                                                    davies_bouldin_score(x, y),
                                                    v_measure_score(y_label.to_numpy(dtype=int), y, beta=0)]
         kmeans_res = classification_report(y_label, y, output_dict=True)
-        results.loc[results.shape[0]] = classification_scores(dataset_name, f'kmeans_{k}', kmeans_res)
+        results.loc[results.shape[0]] = classification_scores(dataset_name, k, kmeans_res)
 
     dict_stats = {'Log Likelihood': kmeans_stats['Log Likelihood'],
                   'Silhouette score': kmeans_stats['Silhouette score'], 'DB score': kmeans_stats['DB score'],
@@ -99,6 +97,8 @@ def perform_kmeans(dataset_name, method_name, x, y_label, seed, plot=False):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         results.to_csv(path, sep=',', encoding='utf-8')
 
+        plot_label_accuracy(f'{dataset_name} with KMeans', results)
+
     return dict_stats
 
 
@@ -110,14 +110,12 @@ def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
     for n in range(2, n_max):
         predictor = GaussianMixture(n_components=n, random_state=seed)
         y = predictor.fit_predict(x)
-        if plot and n <= 5:
-            plot_cluster(dataset_name, 'em', x, y, n, y_label, weights=None)
 
         em_stats.loc[em_stats.shape[0]] = [dataset_name, n, predictor.score(x), silhouette_score(x, y),
                                            davies_bouldin_score(x, y),
                                            v_measure_score(y_label.to_numpy(dtype=int), y, beta=0)]
         em_res = classification_report(y_label, y, output_dict=True)
-        results.loc[results.shape[0]] = classification_scores(dataset_name, f'em_{n}', em_res)
+        results.loc[results.shape[0]] = classification_scores(dataset_name, n, em_res)
 
     dict_stats = {'Log Likelihood': em_stats['Log Likelihood'], 'Silhouette score': em_stats['Silhouette score'],
                   'DB score': em_stats['DB score'], 'V measure': em_stats['V measure']}
@@ -136,40 +134,20 @@ def perform_em(dataset_name, method_name, x, y_label, seed, plot=False):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         results.to_csv(path, sep=',', encoding='utf-8')
 
+        plot_label_accuracy(f'{dataset_name} with EM', results)
+
     return dict_stats
 
 
-def plot_cluster(name, c_name, x, y, k, y_label, weights=None):
-    from itertools import combinations
-    if weights is not None:
-        weights = np.asarray(weights)
-        weights -= weights.min()
-        weights /= weights.max()
-        weights = .5 + weights / 2
-    y_label = y_label.map({False: 'green', True: 'red'})
-    f = list(combinations(range(0, x.shape[1]), 2))
-    n = len(f)
-    fx = fy = int(np.sqrt(n))
-    if fx * fy < n:
-        if fx > 2:
-            fy += 1
-        else:
-            fx += 1
-    fig, axes = plt.subplots(fx, fy, figsize=(10, 10) if fx < 8 else (20, 20))
-    fig.tight_layout(h_pad=2)
-    faxes = axes.flatten()
-    x = x[:300, :]
-    y = y[:300]
-    y_label = y_label[:300]
-    if weights is not None:
-        weights = weights[:300]
-    for i, pair in enumerate(f):
-        a, b = pair
-        ax = faxes[i]
-        ax.set_title(str(pair))
-        ax.scatter(x[:, a], x[:, b], c=y, edgecolors=y_label, alpha=1 if weights is None else weights)
+def plot_label_accuracy(name, dataframe):
+    dataframe.plot(x='clustering', y=['precision', 'recall', 'f1', 'accuracy'], kind='line', figsize=(10, 10))
+    plt.title(f'Labelling Accuracy for {name}')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Scores')
+    plt.legend(loc='best')
+    plt.grid()
 
-    path = f'plots/scatter/{name}_{c_name}_{k}.png'
+    path = f'plots/exp1/{name}_labelling_accuracy.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -190,7 +168,7 @@ def plot_cluster_stats(dataset, method, stats):
         ax.set_xticks(x)
         ax.legend(loc='best')
 
-    path = f'plots/stats/{dataset}_{method}.png'
+    path = f'plots/exp1/{dataset}_{method}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -214,7 +192,7 @@ def plot_cluster_stats_batch(dataset, method, stats):
             ax.set_xticks(x)
             ax.legend(loc='best')
 
-    path = f'plots/batch/{dataset}_{method}.png'
+    path = f'plots/exp3/{dataset}_{method}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -232,7 +210,7 @@ def plot_transformations(dataset, method, title, x_label, y_label, values):
     ax.plot(x, values)
     ax.set_xticks(x)
 
-    path = f'plots/transformations/{dataset}_{method}.png'
+    path = f'plots/exp2/{dataset}_{method}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -258,7 +236,7 @@ def plot_reconstruction(dataset, dict_reconstruct, rp_reconstruct):
         ax.fill_between(x, mean - std, mean + std, alpha=0.4, color='blue')
 
     ax.legend(loc='best')
-    path = f'plots/transformations/reconstruction_{dataset}.png'
+    path = f'plots/exp2/reconstruction_{dataset}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -306,7 +284,7 @@ def plot_learning_curve(data_name, estimator, train_x, train_y, score_metric):
     axes[1].legend(loc="best")
     axes[1].set_title("Scalability of the model")
 
-    path = f'plots/learningcurves/{data_name}.png'
+    path = f'plots/exp4-5/{data_name}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
 
@@ -337,6 +315,6 @@ def plot_color_map(df, data_name, groupby, x, y, title):
     ax.axvline(0, color='black')
     ax.set_title(title)
 
-    path = f'plots/scatter/{data_name}.png'
+    path = f'plots/exp3/{data_name}.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
