@@ -110,11 +110,17 @@ def part3():
 
         stats = {'kmeans': {}, 'em': {}}
         for method_name, fs_method in {
+            'WO': None,
             'PCA': PCA(k, random_state=seed),
             'ICA': FastICA(k, random_state=seed),
             'RP': GaussianRandomProjection(k, random_state=seed),
             'MI': SelectKBest(mutual_info_classif, k=k)}.items():
-            new_x = fs_method.fit_transform(x, y_label)
+
+            if method_name == 'WO':
+                new_x = x
+            else:
+                new_x = fs_method.fit_transform(x, y_label)
+
             k_stats = perform_kmeans(dataset_name, method_name, new_x, y_label, seed, plot=False)
             e_stats = perform_em(dataset_name, method_name, new_x, y_label, seed, plot=False)
             stats['kmeans'][method_name] = k_stats
@@ -126,31 +132,62 @@ def part3():
     pca = PCA(n_components=6, random_state=seed)
     X_pca_array = pca.fit_transform(datasets['wine'][0])
     X_pca = pd.DataFrame(X_pca_array, columns=['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6'])
-
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_pca)
     y_cluster_kmeans = kmeans.predict(X_pca)
-
     df_plotKM = X_pca.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
-
     plot_color_map(df_plotKM, 'kmeans_colorplot_pca_wine', 'kmeans', 'PC1', 'PC2',
                    'KMeans on PCA Dimensionality Reduction on Wine')
+
+    path = 'stats/exp3/dataset_pca.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df_plotKM.to_csv(path, sep=',', encoding='utf-8')
 
     ica = FastICA(n_components=6, random_state=seed)
     X_ica_array = ica.fit_transform(datasets['wine'][0])
     X_ica = pd.DataFrame(X_ica_array, columns=['IC1', 'IC2', 'IC3', 'IC4', 'IC5', 'IC6'])
-
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_ica)
     y_cluster_kmeans = kmeans.predict(X_ica)
-
     df_plotKM = X_ica.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
-
     plot_color_map(df_plotKM, 'kmeans_colorplot_ica_wine', 'kmeans', 'IC1', 'IC2',
                    'KMeans on ICA Dimensionality Reduction on Wine')
 
+    path = 'stats/exp3/dataset_ica.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df_plotKM.to_csv(path, sep=',', encoding='utf-8')
+
+    rp = GaussianRandomProjection(n_components=6, random_state=seed)
+    X_rp_array = rp.fit_transform(datasets['wine'][0])
+    X_rp = pd.DataFrame(X_rp_array, columns=['RP1', 'RP2', 'RP3', 'RP4', 'RP5', 'RP6'])
+    kmeans = KMeans(n_clusters=2, random_state=seed)
+    kmeans.fit(X_rp)
+    y_cluster_kmeans = kmeans.predict(X_rp)
+    df_plotKM = X_rp.copy()
+    df_plotKM['kmeans'] = y_cluster_kmeans
+    plot_color_map(df_plotKM, 'kmeans_colorplot_rp_wine', 'kmeans', 'RP1', 'RP2',
+                   'KMeans on RP Dimensionality Reduction on Wine')
+
+    path = 'stats/exp3/dataset_rp.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df_plotKM.to_csv(path, sep=',', encoding='utf-8')
+
+    mi = SelectKBest(mutual_info_classif, k=6)
+    X_mi_array = mi.fit_transform(datasets['wine'][0], datasets['wine'][1])
+    X_mi = pd.DataFrame(X_mi_array, columns=['MI1', 'MI2', 'MI3', 'MI4', 'MI5', 'MI6'])
+    kmeans = KMeans(n_clusters=2, random_state=seed)
+    kmeans.fit(X_mi)
+    y_cluster_kmeans = kmeans.predict(X_mi)
+    df_plotKM = X_mi.copy()
+    df_plotKM['kmeans'] = y_cluster_kmeans
+    plot_color_map(df_plotKM, 'kmeans_colorplot_mi_wine', 'kmeans', 'MI1', 'MI2',
+                   'KMeans on MI Feature Selection on Wine')
+
+    path = 'stats/exp3/dataset_mi.csv'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df_plotKM.to_csv(path, sep=',', encoding='utf-8')
 
 def part4():
     seed = 42
