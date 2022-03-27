@@ -103,6 +103,7 @@ def part3():
     np.random.seed(seed)
 
     datasets = preprocess_data()
+    results = pd.DataFrame(columns=['data', 'clustering', 'precision', 'recall', 'f1', 'accuracy'])
 
     for dataset_name, data in datasets.items():
         x = data[0]
@@ -135,6 +136,8 @@ def part3():
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_pca)
     y_cluster_kmeans = kmeans.predict(X_pca)
+    kmeans_res = classification_report(datasets['wine'][1], y_cluster_kmeans, output_dict=True)
+    results.loc[results.shape[0]] = classification_scores('PCA', k, kmeans_res)
     df_plotKM = X_pca.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
     plot_color_map(df_plotKM, 'kmeans_colorplot_pca_wine', 'kmeans', 'PC1', 'PC2',
@@ -150,6 +153,8 @@ def part3():
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_ica)
     y_cluster_kmeans = kmeans.predict(X_ica)
+    kmeans_res = classification_report(datasets['wine'][1], y_cluster_kmeans, output_dict=True)
+    results.loc[results.shape[0]] = classification_scores('ICA', k, kmeans_res)
     df_plotKM = X_ica.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
     plot_color_map(df_plotKM, 'kmeans_colorplot_ica_wine', 'kmeans', 'IC1', 'IC2',
@@ -165,6 +170,8 @@ def part3():
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_rp)
     y_cluster_kmeans = kmeans.predict(X_rp)
+    kmeans_res = classification_report(datasets['wine'][1], y_cluster_kmeans, output_dict=True)
+    results.loc[results.shape[0]] = classification_scores('RP', k, kmeans_res)
     df_plotKM = X_rp.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
     plot_color_map(df_plotKM, 'kmeans_colorplot_rp_wine', 'kmeans', 'RP1', 'RP2',
@@ -180,6 +187,8 @@ def part3():
     kmeans = KMeans(n_clusters=2, random_state=seed)
     kmeans.fit(X_mi)
     y_cluster_kmeans = kmeans.predict(X_mi)
+    kmeans_res = classification_report(datasets['wine'][1], y_cluster_kmeans, output_dict=True)
+    results.loc[results.shape[0]] = classification_scores('MI', k, kmeans_res)
     df_plotKM = X_mi.copy()
     df_plotKM['kmeans'] = y_cluster_kmeans
     plot_color_map(df_plotKM, 'kmeans_colorplot_mi_wine', 'kmeans', 'MI1', 'MI2',
@@ -188,6 +197,8 @@ def part3():
     path = 'stats/exp3/dataset_mi.csv'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     df_plotKM.to_csv(path, sep=',', encoding='utf-8')
+    results.to_csv('stats/exp3/cluster_accuracy_dr.csv', sep=',', encoding='utf-8')
+
 
 def part4():
     seed = 42
@@ -266,3 +277,4 @@ if __name__ == '__main__':
     part3()
     part4()
     part5()
+    part3()
