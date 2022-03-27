@@ -277,4 +277,3 @@ if __name__ == '__main__':
     part3()
     part4()
     part5()
-    part3()
