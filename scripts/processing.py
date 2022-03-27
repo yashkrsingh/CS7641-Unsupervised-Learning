@@ -8,7 +8,6 @@ from sklearn.metrics import davies_bouldin_score, v_measure_score, silhouette_sc
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import learning_curve, train_test_split
-from sklearn.model_selection import validation_curve
 from sklearn import preprocessing
 
 
@@ -193,7 +192,7 @@ def plot_cluster_stats_batch(dataset, method, stats):
             ax.set_xticks(x)
             ax.legend(loc='best')
 
-    path = f'plots/exp3/{dataset}_{method}.png'
+    path = f'plots/exp3/{dataset}_{method}_batch.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.clf()
@@ -285,7 +284,7 @@ def plot_learning_curve(data_name, estimator, train_x, train_y, score_metric):
     axes[1].legend(loc="best")
     axes[1].set_title("Scalability of the model")
 
-    path = f'plots/exp4-5/{data_name}.png'
+    path = f'plots/exp4-5/{data_name}_learningcurve.png'
     os.makedirs(os.path.dirname(path), exist_ok=True)
     plt.savefig(path, dpi=200, bbox_inches='tight')
 
